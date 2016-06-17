@@ -1,0 +1,3 @@
+#[[OpenIOSDSCollector]]
+enabled=True
+namespaces = OPENIO

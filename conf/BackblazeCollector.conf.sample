@@ -1,0 +1,5 @@
+#[[BackblazeCollector]]
+enabled=True
+account-id="<backblaze_account_id>"
+application-key="<backblaze_application_key>"
+bucket-name="<backblaze_bucket_name>"
