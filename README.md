@@ -14,10 +14,10 @@ This module provides custom collectors for python-diamond (https://github.com/py
 
 - Install the required dependencies (listed in the collector python file)
 
-- Place the folder(s) containing the collector python file (e.g. openio-stable-16.04) in /usr/share/diamond/collectors/
+- Place the folder(s) containing the collector python file in /usr/share/diamond/collectors/
 
 ```
-# cp -r collectors/openio/openio-stable-16.04 /usr/share/diamond/collectors
+# cp -r collectors/openio/ /usr/share/diamond/collectors
 ```
 
 - Place the corresponding configuration file(s) in /etc/diamond/collectors
