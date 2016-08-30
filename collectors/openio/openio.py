@@ -169,12 +169,12 @@ class OpenIOSDSCollector(diamond.collector.Collector):
 
         if float(inodes_total) > 0:
             self.publish_gauge(
-                '%s.inodes_percentfree' % metric_prefix,
+                '%s.0.inodes_percentfree' % metric_prefix,
                 float(inodes_free) / float(inodes_total) * 100)
-        self.publish_gauge('%s.inodes_used' % metric_prefix,
+        self.publish_gauge('%s.0.inodes_used' % metric_prefix,
                            inodes_total - inodes_free)
-        self.publish_gauge('%s.inodes_free' % metric_prefix, inodes_free)
-        self.publish_gauge('%s.inodes_avail' % metric_prefix, inodes_avail)
+        self.publish_gauge('%s.0.inodes_free' % metric_prefix, inodes_free)
+        self.publish_gauge('%s.0.inodes_avail' % metric_prefix, inodes_avail)
 
     def get_rawx_stats(self, http, addr, namespace, srv_type='rawx'):
         stat = http.request('GET', addr+'/stat')
