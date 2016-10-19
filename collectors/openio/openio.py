@@ -110,11 +110,11 @@ class OpenIOSDSCollector(diamond.collector.Collector):
             rootfs = None
             for line in f:
                 l = line.split(' ')
-                if l[1] == "/":
-                    rootfs = line
-                elif any([True for e in self.fs if e in line]):
-                    if volume.startswith(l[1]):
-                        return self.get_blkid(line, volume)
+                if any([True for e in self.fs if e in line]):
+                    if l[1] == "/":
+                        rootfs = l
+                    elif volume.startswith(l[1]):
+                        return self.get_blkid(l, volume)
             if rootfs:
                 return self.get_blkid(rootfs, volume)
 
@@ -123,6 +123,8 @@ class OpenIOSDSCollector(diamond.collector.Collector):
             p = Popen(['blkid', line[0]], stdout=PIPE,
                       stderr=PIPE)
             stdout, stderr = p.communicate()
+            if stderr:
+                raise Exception(stderr)
             params = dict(t.split('=')
                           for t in shlex.split("VOLUME="+stdout))
             return str(params['UUID'])
