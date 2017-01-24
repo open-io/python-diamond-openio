@@ -106,17 +106,26 @@ class OpenIOSDSCollector(diamond.collector.Collector):
         """ Fetches the the block id of a provided volume to include
         as an additional tag
         """
-        with open("/etc/mtab") as f:
-            rootfs = None
-            for line in f:
-                l = line.split(' ')
-                if any([True for e in self.fs if e in line]):
-                    if l[1] == "/":
-                        rootfs = l
-                    elif volume.startswith(l[1]):
-                        return self.get_blkid(l, volume)
-            if rootfs:
-                return self.get_blkid(rootfs, volume)
+        try:
+            p = Popen(['df', volume], stdout=PIPE,
+                      stderr=PIPE)
+            stdout, stderr = p.communicate()
+            if stderr:
+                self.log.exception(stderr)
+            device = stdout.split('\n')[1].split()[0]
+
+            try:
+                p = Popen(['blkid', device], stdout=PIPE, stderr=PIPE)
+                stdout, stderr = p.communicate()
+                uuid = stdout.split(" ")[1].split("UUID=")[1][:-1]
+                return str(uuid)
+            except Exception as e:
+                self.log.exception(e)
+                return str(device)
+        except Exception as e:
+            self.log.exception(e)
+            return
+
 
     def get_blkid(self, line, volume):
         try:
