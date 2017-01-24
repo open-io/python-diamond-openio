@@ -103,7 +103,7 @@ class OpenIOSDSCollector(diamond.collector.Collector):
                                          namespace, srvtype)
 
     def get_filesystem(self, volume):
-        """ Fetches the the block id of a provided volume to include
+        """ Fetches the block id of a provided volume to include
         as an additional tag
         """
         try:
@@ -113,11 +113,10 @@ class OpenIOSDSCollector(diamond.collector.Collector):
             if stderr:
                 self.log.exception(stderr)
             device = stdout.split('\n')[1].split()[0]
-
             try:
                 p = Popen(['blkid', device], stdout=PIPE, stderr=PIPE)
                 stdout, stderr = p.communicate()
-                uuid = stdout.split(" ")[1].split("UUID=")[1][:-1]
+                uuid = stdout.split("UUID=")[1].split(' ')[0][:-1]
                 return str(uuid)
             except Exception as e:
                 self.log.exception(e)
@@ -125,21 +124,6 @@ class OpenIOSDSCollector(diamond.collector.Collector):
         except Exception as e:
             self.log.exception(e)
             return
-
-
-    def get_blkid(self, line, volume):
-        try:
-            p = Popen(['blkid', line[0]], stdout=PIPE,
-                      stderr=PIPE)
-            stdout, stderr = p.communicate()
-            if stderr:
-                raise Exception(stderr)
-            params = dict(t.split('=')
-                          for t in shlex.split("VOLUME="+stdout))
-            return str(params['UUID'])
-        except Exception as e:
-            self.log.exception(e)
-            return line[0]
 
     def get_service_diskspace(self, metric_prefix, volume):
         if hasattr(os, 'statvfs'):  # POSIX
