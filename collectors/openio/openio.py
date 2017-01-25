@@ -16,6 +16,7 @@ Targeted SDS Version: B2 support (unstable)
 import diamond.collector
 import diamond.convertor
 import urllib3
+import shlex
 from oio.common import utils
 import json
 import os
@@ -27,6 +28,7 @@ class OpenIOSDSCollector(diamond.collector.Collector):
     def process_config(self):
         super(OpenIOSDSCollector, self).process_config()
         self.namespaces = self.config['namespaces'] or 'OPENIO'
+        self.fs = self.config['fs-types'] or ('xfs', 'ext4')
 
     def get_default_config_help(self):
         config_help = super(OpenIOSDSCollector, self).get_default_config_help()
@@ -101,26 +103,27 @@ class OpenIOSDSCollector(diamond.collector.Collector):
                                          namespace, srvtype)
 
     def get_filesystem(self, volume):
-        """ Fetches the the block id of a provided volume to include
+        """ Fetches the block id of a provided volume to include
         as an additional tag
         """
-        if volume == '/':
-            return 'rootfs'
-        with open("/etc/mtab") as f:
-            for line in f:
-                if 'rootfs' in line:
-                    pass
-                else:
-                    l = line.split(' ')
-                    if l[1] in volume:
-                        try:
-                            p = Popen(['blkid', l[0]], stdout=PIPE, stderr=PIPE)
-                            stdout, stderr = p.communicate()
-                            uuid = stdout.split(" ")[1].split("UUID=")[1][:-1]
-                            return str(uuid)
-                        except Exception as e:
-                            self.log.exception(e)
-                            return l[0]
+        try:
+            p = Popen(['df', volume], stdout=PIPE,
+                      stderr=PIPE)
+            stdout, stderr = p.communicate()
+            if stderr:
+                self.log.exception(stderr)
+            device = stdout.split('\n')[1].split()[0]
+            try:
+                p = Popen(['blkid', device], stdout=PIPE, stderr=PIPE)
+                stdout, stderr = p.communicate()
+                uuid = stdout.split("UUID=")[1].split(' ')[0][:-1]
+                return str(uuid)
+            except Exception as e:
+                self.log.exception(e)
+                return str(device)
+        except Exception as e:
+            self.log.exception(e)
+            return
 
     def get_service_diskspace(self, metric_prefix, volume):
         if hasattr(os, 'statvfs'):  # POSIX
@@ -143,7 +146,8 @@ class OpenIOSDSCollector(diamond.collector.Collector):
         dvolume = dvolume.replace('_', '-')
 
         for unit in self.config['byte_unit']:
-            metric_name = '%s.%s.%s_percentfree' % (metric_prefix, dvolume, unit)
+            metric_name = '%s.%s.%s_percentfree'\
+                            % (metric_prefix, dvolume, unit)
             metric_value = float(blocks_free) / float(
                 blocks_free + (blocks_total - blocks_free)) * 100
             self.publish_gauge(metric_name, metric_value, 2)

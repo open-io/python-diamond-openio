@@ -1,3 +1,4 @@
 #[[OpenIOSDSCollector]]
 enabled=True
 namespaces = OPENIO
+fs-types = xfs, ext4
