@@ -26,7 +26,6 @@ TO use a unix socket, set a host string like this
 
 import diamond.collector
 import socket
-import re
 
 
 class OpenioZookeeperCollector(diamond.collector.Collector):
@@ -36,7 +35,8 @@ class OpenioZookeeperCollector(diamond.collector.Collector):
         self.instances = self.config['instances'] or 'OPENIO:localhost:6005'
 
     def get_default_config_help(self):
-        config_help = super(OpenioZookeeperCollector, self).get_default_config_help()
+        config_help = super(OpenioZookeeperCollector, self)\
+                                .get_default_config_help()
         config_help.update({
             'publish':
                 "Which rows of 'status' you would like to publish." +
@@ -62,7 +62,7 @@ class OpenioZookeeperCollector(diamond.collector.Collector):
             # 'publish': ''
 
             # Connection settings
-            #'instances': ['OPENIO:localhost:6005'],
+            # 'instances': ['OPENIO:localhost:6005'],
         })
         return config
 
@@ -88,40 +88,25 @@ class OpenioZookeeperCollector(diamond.collector.Collector):
     def _get_stats(self, host, port):
         # stuff that's always ignored, aren't 'stats'
         ignored = ('zk_version', 'zk_server_state')
-        pid = None
 
         stats = {}
         data = self.get_raw_stats(host, port)
 
         # parse stats
         for line in data.splitlines():
-
             pieces = line.split()
-
             if pieces[0] in ignored:
                 continue
             stats[pieces[0]] = pieces[1]
 
         # get max connection limit
-        self.log.debug('pid %s', pid)
-        try:
-            cmdline = "/proc/%s/cmdline" % pid
-            f = open(cmdline, 'r')
-            m = re.search("-c\x00(\d+)", f.readline())
-            if m is not None:
-                self.log.debug('limit connections %s', m.group(1))
-                stats['limit_maxconn'] = m.group(1)
-            f.close()
-        except:
-            self.log.debug("Cannot parse command line options for zookeeper")
-
         return stats
 
     def collect(self):
         instances = self.config.get('instances')
 
         # Convert a string config value to be an array
-        if isinstance(instances , basestring):
+        if isinstance(instances, basestring):
             instances = instances.split(',')
 
         for instance in instances:
@@ -129,9 +114,9 @@ class OpenioZookeeperCollector(diamond.collector.Collector):
 
             stats = self._get_stats(hostname, port)
 
-            metric_prefix = '%s.zookeeper.%s:%s.' % (namespace,
-                                                     hostname.replace('.', '_'),
-                                                     port)
+            prefix = '%s.zookeeper.%s:%s.' % (namespace,
+                                              hostname.replace('.', '_'),
+                                              port)
 
             # figure out what we're configured to get, defaulting to everything
             desired = self.config.get('publish', stats.keys())
@@ -139,9 +124,8 @@ class OpenioZookeeperCollector(diamond.collector.Collector):
             # for everything we want
             for stat in desired:
                 if stat in stats:
-                    self.publish(metric_prefix + stat, stats[stat])
+                    self.publish(prefix + stat, stats[stat])
                 else:
-
                     # we don't, must be somehting configured in publish so we
                     # should log an error about it
                     self.log.error("No such key '%s' available, issue 'stats' "
