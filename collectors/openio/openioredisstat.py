@@ -25,7 +25,6 @@ instances = namespace1:host1:port1, namespace2:host2:port2/PASSWORD, ...
 
 import diamond.collector
 import time
-import os
 
 try:
     import redis
@@ -89,13 +88,14 @@ class OpenioRedisCollector(diamond.collector.Collector):
             else:
                 auth = None
 
-            nick = '%s:%s' % (host.replace('.','_'), port)
+            nick = '%s:%s' % (host.replace('.', '_'), port)
             self.instances[nick] = (namespace, host, port, auth)
 
         self.log.debug("Configured instances: %s" % self.instances.items())
 
     def get_default_config_help(self):
-        config_help = super(OpenioRedisCollector, self).get_default_config_help()
+        config_help = super(OpenioRedisCollector, self)\
+                                .get_default_config_help()
         config_help.update({
             'timeout': 'Socket timeout',
             'db': '',
@@ -110,7 +110,7 @@ class OpenioRedisCollector(diamond.collector.Collector):
         """
         Return default config
 
-:rtype: dict
+        :rtype: dict
 
         """
         config = super(OpenioRedisCollector, self).get_default_config()
@@ -125,11 +125,11 @@ class OpenioRedisCollector(diamond.collector.Collector):
         return config
 
     def _client(self, host, port, auth):
-        """Return a redis client for the configuration.
+        """ Return a redis client for the configuration.
 
-:param str host: redis host
-:param int port: redis port
-:rtype: redis.Redis
+            :param str host: redis host
+            :param int port: redis port
+            :rtype: redis.Redis
 
         """
         db = int(self.config['db'])
@@ -139,8 +139,9 @@ class OpenioRedisCollector(diamond.collector.Collector):
                               db=db, socket_timeout=timeout, password=auth)
             cli.ping()
             return cli
-        except Exception, ex:
-            self.log.error("OpenioRedisCollector: failed to connect to %s:%i. %s.",
+        except Exception as ex:
+            self.log.error("OpenioRedisCollector:\
+                           failed to connect to %s:%i. %s.",
                            host, port, ex)
 
     def _precision(self, value):

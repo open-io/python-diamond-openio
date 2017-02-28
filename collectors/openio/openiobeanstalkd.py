@@ -27,13 +27,14 @@ class OpenioBeanstalkdCollector(diamond.collector.Collector):
 
     def process_config(self):
         super(OpenioBeanstalkdCollector, self).process_config()
-        self.instances = self.config['instances'] or 'OPENIO:127.0.0.1:6014'
+        self.instances = self.config.get('instances', 'OPENIO:127.0.0.1:6014')
 
     def get_default_config_help(self):
         config_help = super(OpenioBeanstalkdCollector,
                             self).get_default_config_help()
         config_help.update({
-            'instances': 'List of instances in the form NAMESPACE:host:port (comma separated)',
+            'instances': 'List of instances in the form NAMESPACE:host:port\
+                         (comma separated)',
         })
         return config_help
 
@@ -47,13 +48,13 @@ class OpenioBeanstalkdCollector(diamond.collector.Collector):
         })
         return config
 
-    def _get_stats(self,host,port):
+    def _get_stats(self, host, port):
         stats = {}
         try:
-            connection = beanstalkc.Connection(host,int(port))
-        except beanstalkc.BeanstalkcException, e:
+            connection = beanstalkc.Connection(host, int(port))
+        except beanstalkc.BeanstalkcException as e:
             self.log.error("Couldn't connect to beanstalkd: %s", e)
-            return {}
+            return None
 
         stats['instance'] = connection.stats()
         stats['tubes'] = []
@@ -74,23 +75,28 @@ class OpenioBeanstalkdCollector(diamond.collector.Collector):
             instances = instances.split(',')
 
         for instance in instances:
-            namespace,host,port = instance.split(':')
-            info = self._get_stats(host,port)
+            namespace, host, port = instance.split(':')
+            info = self._get_stats(host, port)
+            if not info:
+                continue
             metric_prefix = "%s.beanstalkd.%s:%s." % (namespace,
                                                       host.replace('.', '_'),
                                                       port)
 
             for stat, value in info['instance'].items():
                 if stat not in self.SKIP_LIST:
-                    self.publish(metric_prefix + stat, value,
-                             metric_type=self.get_metric_type(stat))
+                    stat = stat.replace('-', '_')
+                    self.publish("%s%s" % (metric_prefix, stat), value,
+                                 metric_type=self.get_metric_type(stat))
 
             for tube_stats in info['tubes']:
                 tube = tube_stats['name']
                 for stat, value in tube_stats.items():
                     if stat != 'name':
-                        self.publish(metric_prefix + 'tubes.%s.%s' % (tube, stat), value,
-                                 metric_type=self.get_metric_type(stat))
+                        _stat = stat.replace('-', '_')
+                        b_name = '%stubes.%s.%s' % (metric_prefix, tube, _stat)
+                        metric = self.get_metric_type(stat)
+                        self.publish(b_name, value, metric_type=metric)
 
     def get_metric_type(self, stat):
         if self.COUNTERS_REGEX.match(stat):
