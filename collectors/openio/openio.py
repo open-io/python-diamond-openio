@@ -181,7 +181,12 @@ class OpenIOSDSCollector(diamond.collector.Collector):
         self.publish_gauge('%s.inodes_avail' % metric_prefix, inodes_avail)
 
     def get_rawx_stats(self, http, addr, namespace, srv_type='rawx'):
-        stat = http.request('GET', addr+'/stat')
+        stat = None
+        try:
+            stat = http.request('GET', addr+'/stat')
+        except Exception as e:
+            self.log.exception(e)
+            return
         for m in (stat.data).split('\n'):
             if not m:
                 continue
@@ -196,7 +201,12 @@ class OpenIOSDSCollector(diamond.collector.Collector):
                              metric_type=metric_type.upper())
 
     def get_gridd_stats(self, http, proxy, addr, namespace, srv_type):
-        stat = http.request('POST', proxy+'/v3.0/forward/stats?id='+addr)
+        stat = None
+        try:
+            stat = http.request('POST', proxy+'/v3.0/forward/stats?id='+addr)
+        except Exception as e:
+            self.log.exception(e)
+            return
         for m in (stat.data).split('\n'):
             if not m:
                 continue
