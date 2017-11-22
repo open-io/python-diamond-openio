@@ -16,11 +16,14 @@ Targeted SDS Version: B2 support (unstable)
 import diamond.collector
 import diamond.convertor
 import urllib3
-import shlex
-from oio.common import utils
 import json
 import os
 from subprocess import Popen, PIPE
+
+try:
+    from oio.common.utils import load_namespace_conf
+except:
+    from oio.common.configuration import load_namespace_conf
 
 
 class OpenIOSDSCollector(diamond.collector.Collector):
@@ -57,7 +60,7 @@ class OpenIOSDSCollector(diamond.collector.Collector):
 
         http = urllib3.PoolManager()
         for ns in namespaces:
-            config = utils.load_namespace_conf(ns)
+            config = load_namespace_conf(ns)
             if not config:
                 self.log.error('No configuration found for namespace ' + ns)
                 continue
